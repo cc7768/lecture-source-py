@@ -416,7 +416,7 @@ apply the Bellman operators and determine the savings policy given prices and va
 .. code-block:: python3
 
     @jitclass(arellano_data)
-    class ArellanoModel(object):
+    class Arellano_Economy(object):
         """
         Arellano 2008 deals with a small open economy whose government
         invests in foreign assets in order to smooth the consumption of
@@ -519,7 +519,7 @@ We can now write a function that will use this class to compute the solution to 
     @jit(nopython=True)
     def solve(model, tol=1e-8, maxiter=10_000):
         """
-        Given an ArellanoModel type, this function computes the optimal
+        Given an Arellano_Economy type, this function computes the optimal
         policy and value functions
         """
         # Unpack certain parameters for simplification
@@ -582,7 +582,7 @@ policy functions
 
         Parameters
         ----------
-        model: ArellanoModel
+        model: Arellano_Economy
             An instance of the Arellano model with the corresponding parameters
         T: integer
             The number of periods that the model should be simulated
@@ -751,23 +751,26 @@ To the extent that you can, replicate the figures shown above
 Solutions
 ==========
 
-
-
 Compute the value function, policy and equilibrium prices
 
 .. code-block:: python3
 
-    ae = Arellano_Economy(β=.953,        # Time discount factor
-                          γ=2.,          # Risk aversion
-                          r=0.017,       # International interest rate
-                          ρ=.945,        # Persistence in output
-                          η=0.025,       # st dev of output shock
-                          θ=0.282,       # Prob of regaining access
-                          ny=21,         # Number of points in y grid
-                          nB=251,        # Number of points in B grid
-                          tol=1e-8,      # Error tolerance in iteration
-                          maxit=10000)
+    β, γ, r = 0.953, 2.0, 0.017
+    ρ, η, θ = 0.945, 0.025, 0.282
+    ny = 21
+    nB = 251
+    Bgrid = np.linspace(-0.45, 0.45, nB)
+    mc = qe.markov.tauchen(ρ, η, 0, 3, ny)
+    ygrid, P = np.exp(mc.state_values), mc.P
 
+    ae = Arellano_Economy(
+        Bgrid, P, ygrid, β=β, γ=γ, r=r, ρ=ρ, η=η, θ=θ
+    )
+
+
+.. code-block:: python3
+
+    V, Vc, Vd, iBstar, default_prob, default_states, q = solve(ae)
 
 
 Compute the bond price schedule as seen in figure 3 of Arellano (2008)
@@ -776,8 +779,8 @@ Compute the bond price schedule as seen in figure 3 of Arellano (2008)
 
 
     # Create "Y High" and "Y Low" values as 5% devs from mean
-    high, low = np.mean(ae.ygrid) * 1.05, np.mean(ae.ygrid) * .95
-    iy_high, iy_low = (np.searchsorted(ae.ygrid, x) for x in (high, low))
+    high, low = np.mean(ae.y) * 1.05, np.mean(ae.y) * .95
+    iy_high, iy_low = (np.searchsorted(ae.y, x) for x in (high, low))
 
     fig, ax = plt.subplots(figsize=(10, 6.5))
     ax.set_title("Bond price schedule $q(y, B')$")
@@ -786,12 +789,12 @@ Compute the bond price schedule as seen in figure 3 of Arellano (2008)
     x = []
     q_low = []
     q_high = []
-    for i in range(ae.nB):
-        b = ae.Bgrid[i]
+    for i in range(nB):
+        b = ae.B[i]
         if -0.35 <= b <= 0:  # To match fig 3 of Arellano
             x.append(b)
-            q_low.append(ae.Q[iy_low, i])
-            q_high.append(ae.Q[iy_high, i])
+            q_low.append(q[iy_low, i])
+            q_high.append(q[iy_high, i])
     ax.plot(x, q_high, label="$y_H$", lw=2, alpha=0.7)
     ax.plot(x, q_low, label="$y_L$", lw=2, alpha=0.7)
     ax.set_xlabel("$B'$")
@@ -805,16 +808,16 @@ Draw a plot of the value functions
 
 
     # Create "Y High" and "Y Low" values as 5% devs from mean
-    high, low = np.mean(ae.ygrid) * 1.05, np.mean(ae.ygrid) * .95
-    iy_high, iy_low = (np.searchsorted(ae.ygrid, x) for x in (high, low))
+    high, low = np.mean(ae.y) * 1.05, np.mean(ae.y) * .95
+    iy_high, iy_low = (np.searchsorted(ae.y, x) for x in (high, low))
 
     fig, ax = plt.subplots(figsize=(10, 6.5))
     ax.set_title("Value Functions")
-    ax.plot(ae.Bgrid, ae.V[iy_high], label="$y_H$", lw=2, alpha=0.7)
-    ax.plot(ae.Bgrid, ae.V[iy_low], label="$y_L$", lw=2, alpha=0.7)
+    ax.plot(ae.B, V[iy_high], label="$y_H$", lw=2, alpha=0.7)
+    ax.plot(ae.B, V[iy_low], label="$y_L$", lw=2, alpha=0.7)
     ax.legend(loc='upper left')
     ax.set(xlabel="$B$", ylabel="$V(y, B)$")
-    ax.set_xlim(ae.Bgrid.min(), ae.Bgrid.max())
+    ax.set_xlim(ae.B.min(), ae.B.max())
     plt.show()
 
 
@@ -840,9 +843,10 @@ Draw a heat map for default probability
 Plot a time series of major variables simulated from the model
 
 .. code-block:: python3
-
     T = 250
-    y_vec, B_vec, q_vec, default_vec = ae.simulate(T)
+
+    np.random.seed(42)
+    y_vec, B_vec, q_vec, default_vec = simulate(ae, T, default_states, iBstar, q)
 
     # Pick up default start and end dates
     start_end_pairs = []
@@ -858,7 +862,7 @@ Plot a time series of major variables simulated from the model
             end_default = i - 1
             start_end_pairs.append((start_default, end_default))
 
-    plot_series = y_vec, B_vec, q_vec
+    plot_series = (y_vec, B_vec, q_vec)
     titles = 'output', 'foreign assets', 'bond price'
 
     fig, axes = plt.subplots(len(plot_series), 1, figsize=(10, 12))
@@ -877,6 +881,5 @@ Plot a time series of major variables simulated from the model
         ax.grid()
         ax.plot(range(T), series, lw=2, alpha=0.7)
         ax.set(title=title, xlabel="time")
-
-    plt.show()
+        plt.show()
 
