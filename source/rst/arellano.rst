@@ -73,7 +73,7 @@ Let's start with some imports:
     import quantecon as qe
     import random
 
-    from numba import jit
+from numba import jit, float64, jitclass
 
     %matplotlib inline
 
@@ -882,4 +882,3 @@ Plot a time series of major variables simulated from the model
         ax.plot(range(T), series, lw=2, alpha=0.7)
         ax.set(title=title, xlabel="time")
         plt.show()
-
