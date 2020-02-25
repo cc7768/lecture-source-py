@@ -73,7 +73,7 @@ Let's start with some imports:
     import quantecon as qe
     import random
 
-from numba import jit, float64, jitclass
+from numba import jit, jitclass, int64, float64
 
     %matplotlib inline
 
