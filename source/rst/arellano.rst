@@ -73,7 +73,7 @@ Let's start with some imports:
     import quantecon as qe
     import random
 
-from numba import jit, jitclass, int64, float64
+    from numba import jit, jitclass, int64, float64
 
     %matplotlib inline
 
@@ -821,14 +821,12 @@ Draw a plot of the value functions
     plt.show()
 
 
-
 Draw a heat map for default probability
 
 .. code-block:: python3
 
-
-    xx, yy = ae.Bgrid, ae.ygrid
-    zz = ae.default_prob
+    xx, yy = ae.B, ae.y
+    zz = default_prob
 
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 6.5))
@@ -843,6 +841,7 @@ Draw a heat map for default probability
 Plot a time series of major variables simulated from the model
 
 .. code-block:: python3
+
     T = 250
 
     np.random.seed(42)
@@ -881,4 +880,6 @@ Plot a time series of major variables simulated from the model
         ax.grid()
         ax.plot(range(T), series, lw=2, alpha=0.7)
         ax.set(title=title, xlabel="time")
-        plt.show()
+
+    plt.show()
+
