@@ -157,7 +157,7 @@ Here are some basic precepts.
 Don't Use Magic Numbers
 -----------------------
 
-If you look at the code above, you'll see numbers like 50 and 49 and 3 scattered through the code.
+If you look at the code above, you'll see numbers like ``50`` and ``49`` and ``3`` scattered through the code.
 
 These kinds of numeric literals in the body of your code are sometimes called "magic numbers".
 
@@ -166,9 +166,9 @@ This is not a compliment.
 While numeric literals are not all evil, the numbers shown in the program above
 should certainly be replaced by named constants.
 
-For example, the code above could declare the variable `time_series_length = 50`.
+For example, the code above could declare the variable ``time_series_length = 50``.
 
-Then in the loops, 49 should be replaced by `time_series_length - 1`.
+Then in the loops, ``49`` should be replaced by ``time_series_length - 1``.
 
 The advantages are:
 
@@ -269,15 +269,15 @@ Here's some code that reproduces the plot above with better coding style.
 
     from itertools import product
 
-    def plot_path(ax, αs, s_vals, δs, series_length=50):
+    def plot_path(ax, αs, s_vals, δs, time_series_length=50):
         """
         Add a time series plot to the axes ax for all given parameters.
         """
-        k = np.empty(series_length)
+        k = np.empty(time_series_length)
 
         for (α, s, δ) in product(αs, s_vals, δs):
             k[0] = 1
-            for t in range(series_length-1):
+            for t in range(time_series_length-1):
                 k[t+1] = s * k[t]**α + (1 - δ) * k[t]
             ax.plot(k, 'o-', label=rf"$\alpha = {α},\; s = {s},\; \delta = {δ}$")
 
@@ -439,7 +439,7 @@ Here's one solution, that uses a class:
 
     class Equilibrium:
         
-        def __init__(self, α=0.12, β=1, γ=1, δ=1):
+        def __init__(self, α=0.1, β=1, γ=1, δ=1):
             self.α, self.β, self.γ, self.δ = α, β, γ, δ
     
         def qs(self, p):
@@ -492,7 +492,7 @@ parameters, we don't need to repeat ourselves:
 
 .. code:: ipython3
 
-    eq.α = 0.12
+    eq.γ = 1.25
 
 .. code:: ipython3
 
